@@ -1,0 +1,36 @@
+name: Auto Unzip and Build
+on:
+  push:
+    paths:
+      - '*.zip'
+
+jobs:
+  unzip_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Unzip Source
+        run: |
+          FILE=$(ls *.zip | head -n 1)
+          echo "Unzipping $FILE"
+          unzip -o "$FILE"
+          rm -f "$FILE"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: apk-result
+          path: app/build/outputs/apk/debug/*.apk
