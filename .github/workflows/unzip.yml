@@ -1,46 +1,36 @@
-yaml
 name: Auto Unzip and Build
 on:
-push:
-paths:
+  push:
+    paths:
+      - '*.zip'
 
-'*.zip'
 jobs:
-unzip_job:
-runs-on: ubuntu-latest
-steps:
-# 1. 把代码拉下来
+  unzip_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-name: Checkout code
-uses: actions/checkout@v4
-# 2. 自动解压你刚才传的那个压缩包
+      - name: Unzip Source
+        run: |
+          FILE=$(ls *.zip | head -n 1)
+          echo "Unzipping $FILE"
+          unzip -o "$FILE"
+          rm -f "$FILE"
 
-name: Unzip Source
-run: |
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-自动找到目录下的 zip 文件并解压
+      - name: Build APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-FILE=$(ls *.zip | head -n 1)
-echo "正在解压 $FILE ..."
-unzip -o "$FILE"
-rm -f "$FILE" # 解压完删掉压缩包，节省空间
-# 3. 配置 Java 环境（为了编译 APK）
-
-name: Set up JDK
-uses: actions/setup-java@v3
-with:
-distribution: 'temurin'
-java-version: '17'
-# 4. 开始编译 APK
-
-name: Build APK
-run: |
-chmod +x ./gradlew
-./gradlew assembleDebug
-# 5. 把编译好的 APK 传回来到网页上给你下载
-
-name: Upload APK
-uses: actions/upload-artifact@v3
-with:
-name: MyApp-APK
-path: app/build/outputs/apk/debug/*.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: apk-result
+          path: app/build/outputs/apk/debug/*.apk
